@@ -5,7 +5,7 @@ import java.util.Observable;
 
 
 /** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+ *  @author SheZiy
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -111,6 +111,30 @@ public class Model extends Observable {
         changed = false;
 
         // TODO: Modify this.board (and perhaps this.score) to account
+        board.setViewingPerspective(side);
+        int size = board.size();
+        boolean[][] merged= new boolean[size][size];
+        for(int i = 0; i <size; i++){
+            for(int j = 0; j < size; j++){
+                merged[i][j] = false;
+            }
+        }
+        for(int c = 0; c < size; c++){
+            for(int r = size - 1; r >= 0; r--){
+                Tile t = board.tile(c, r);
+                if(t != null){
+                    int[] _move_to = move_to(c, r, t, merged);
+                    if(_move_to[0] == 1) {
+                        changed = true;
+                        board.move(_move_to[2], _move_to[3], t);
+                        if (_move_to[1] == 1) {
+                            score += board.tile(_move_to[2], _move_to[3]).value();
+                        }
+                    }
+                }
+            }
+        }
+        board.setViewingPerspective(Side.NORTH);
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
@@ -119,6 +143,30 @@ public class Model extends Observable {
             setChanged();
         }
         return changed;
+    }
+
+    public int[] move_to(int c, int r, Tile self, boolean[][] merged){
+        int up_find = r + 1;
+        int[] move_info = new int []{0, 0, c, r};
+        while(up_find < board.size()){
+            Tile goal = board.tile(c, up_find);
+            if(goal!= null){
+                if(goal.value() == self.value() && !merged[c][up_find]){
+                    move_info[0] = 1;
+                    move_info[1] = 1;
+                    move_info[3] = up_find;
+                }
+            }else{
+                move_info[0] = 1;
+                move_info[1] = 0;
+                move_info[3] = up_find;
+            }
+            up_find++;
+        }
+        if(move_info[1] == 1){
+            merged[move_info[2]][move_info[3]] = true;
+        }
+        return move_info;
     }
 
     /** Checks if the game is over and sets the gameOver variable
@@ -137,7 +185,13 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+        for(int i = 0; i < b.size(); i++){
+            for(int j = 0; j < b.size(); j++){
+                if(b.tile(i, j) == null){
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -147,7 +201,15 @@ public class Model extends Observable {
      * given a Tile object t, we get its value with t.value().
      */
     public static boolean maxTileExists(Board b) {
-        // TODO: Fill in this function.
+        for(int i = 0; i < b.size(); i++){
+            for(int j = 0; j < b.size(); j++){
+                if(b.tile(i, j) != null){
+                    if(b.tile(i, j).value() == MAX_PIECE) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
@@ -158,7 +220,31 @@ public class Model extends Observable {
      * 2. There are two adjacent tiles with the same value.
      */
     public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
+        //Testing if there is at least one empty space on the board.
+        if (emptySpaceExists(b)) {
+            return true;
+        }
+        //Testing if there are two adjacent tiles with the same value.
+        else {
+            for (int i = 0; i < b.size(); i++) {
+                for (int j = 0; j < b.size(); j++) {
+                    int center = b.tile(i, j).value();
+                    int up, right;
+                    if (i + 1 < b.size()) {
+                        right = b.tile(i + 1, j).value();
+                        if (center == right) {
+                            return true;
+                        }
+                    }
+                    if (j + 1 < b.size()) {
+                        up = b.tile(i, j + 1).value();
+                        if (center == up) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
         return false;
     }
 
